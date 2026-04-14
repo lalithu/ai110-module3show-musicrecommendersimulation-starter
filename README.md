@@ -17,6 +17,37 @@ Replace this paragraph with your own summary of what your version does.
 
 ## How The System Works
 
+### Features Used
+- **Song Features**: Each song is represented by the following attributes:
+  - `genre`: The genre of the song (e.g., pop, rock, lofi).
+  - `mood`: The mood of the song (e.g., happy, chill, intense).
+  - `energy`: A numerical value (0.0–1.0) representing the song's energy level.
+  - `tempo_bpm`: The tempo of the song in beats per minute.
+  - `valence`: A numerical value (0.0–1.0) indicating the positivity of the song.
+  - `danceability`: A numerical value (0.0–1.0) indicating how suitable the song is for dancing.
+  - `acousticness`: A numerical value (0.0–1.0) indicating the acoustic quality of the song.
+
+- **User Profile**: The user profile stores preferences for:
+  - `favorite_genre`: The user's preferred genre.
+  - `favorite_mood`: The user's preferred mood.
+  - `target_energy`: The user's target energy level.
+  - `target_tempo`: The user's preferred tempo range.
+  - `target_valence`: The user's target positivity level.
+
+### Scoring Logic
+The recommender computes a score for each song based on the following rules:
+1. **Genre Match**: +2.0 points if the song's genre matches the user's favorite genre.
+2. **Mood Match**: +1.0 point if the song's mood matches the user's favorite mood.
+3. **Energy Similarity**: Points are awarded based on how close the song's energy is to the user's target energy.
+4. **Tempo Similarity**: Points are awarded based on how close the song's tempo is to the user's target tempo.
+5. **Valence Similarity**: Points are awarded based on how close the song's valence is to the user's target valence.
+
+### Recommendation Process
+1. **Input**: User preferences and the song catalog.
+2. **Scoring**: Each song is scored based on the rules above.
+3. **Ranking**: Songs are ranked from highest to lowest score.
+4. **Output**: The top K songs are recommended to the user.
+
 Explain your design in plain language.
 
 Some prompts to answer:
