@@ -253,7 +253,7 @@ The confidence metric revealed a real insight: low confidence doesn't mean a bad
 
 ## Video Walkthrough
 
-> 🎬 [Loom link — add after recording]
+> 🎬 [(https://www.youtube.com/watch?v=5adsVe8XNk)]
 
 ---
 
