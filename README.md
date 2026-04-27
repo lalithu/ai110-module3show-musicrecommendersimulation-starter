@@ -1,242 +1,280 @@
-# 🎵 Music Recommender Simulation
+# 🎵 Music Recommender — Applied AI System
 
-## Project Summary
-
-In this project you will build and explain a small music recommender system.
-
-Your goal is to:
-
-- Represent songs and a user "taste profile" as data
-- Design a scoring rule that turns that data into recommendations
-- Evaluate what your system gets right and wrong
-- Reflect on how this mirrors real world AI recommenders
-
-Replace this paragraph with your own summary of what your version does.
+> **Base project:** Module 3 — Music Recommender Simulation  
+> This final project extends the original rule-based music recommender into a full applied AI system featuring a Claude-powered agentic workflow, confidence scoring, structured logging, and an automated evaluation harness.
 
 ---
 
-## How The System Works
+## Summary
 
-### Features Used
-- **Song Features**: Each song is represented by the following attributes:
-  - `genre`: The genre of the song (e.g., pop, rock, lofi).
-  - `mood`: The mood of the song (e.g., happy, chill, intense).
-  - `energy`: A numerical value (0.0–1.0) representing the song's energy level.
-  - `tempo_bpm`: The tempo of the song in beats per minute.
-  - `valence`: A numerical value (0.0–1.0) indicating the positivity of the song.
-  - `danceability`: A numerical value (0.0–1.0) indicating how suitable the song is for dancing.
-  - `acousticness`: A numerical value (0.0–1.0) indicating the acoustic quality of the song.
+The original Module 3 project built a rule-based music recommender that scores songs against a user's structured preferences (genre, mood, energy, tempo, valence) using weighted heuristics. It demonstrated how data-driven scoring rules could surface relevant music without any machine learning.
 
-- **User Profile**: The user profile stores preferences for:
-  - `favorite_genre`: The user's preferred genre.
-  - `favorite_mood`: The user's preferred mood.
-  - `target_energy`: The user's target energy level.
-  - `target_tempo`: The user's preferred tempo range.
-  - `target_valence`: The user's target positivity level.
-
-### Scoring Logic
-The recommender computes a score for each song based on the following rules:
-1. **Genre Match**: +2.0 points if the song's genre matches the user's favorite genre.
-2. **Mood Match**: +1.0 point if the song's mood matches the user's favorite mood.
-3. **Energy Similarity**: Points are awarded based on how close the song's energy is to the user's target energy.
-4. **Tempo Similarity**: Points are awarded based on how close the song's tempo is to the user's target tempo.
-5. **Valence Similarity**: Points are awarded based on how close the song's valence is to the user's target valence.
-
-### Recommendation Process
-1. **Input**: User preferences and the song catalog.
-2. **Scoring**: Each song is scored based on the rules above.
-3. **Ranking**: Songs are ranked from highest to lowest score.
-4. **Output**: The top K songs are recommended to the user.
-
-Explain your design in plain language.
-
-Some prompts to answer:
-
-- What features does each `Song` use in your system
-  - For example: genre, mood, energy, tempo
-- What information does your `UserProfile` store
-- How does your `Recommender` compute a score for each song
-- How do you choose which songs to recommend
-
-You can include a simple diagram or bullet list if helpful.
+This extended version adds a **3-step Claude agentic pipeline**: the user types a natural language request ("I want chill lofi for studying"), Claude parses it into structured preferences, the rule engine scores the song catalog, and Claude generates personalized explanations for each recommendation. The result is a system that accepts human language, reasons about it, and produces explainable outputs — all testable and logged.
 
 ---
 
-## Getting Started
+## Architecture Overview
 
-### Setup
+```
+User Natural Language
+        │
+        ▼
+  ┌─────────────────────────────────────────┐
+  │        AI Agentic Pipeline              │
+  │                                         │
+  │  Step 1: Claude (Haiku)                 │
+  │    Parse intent → structured JSON prefs │
+  │          │                              │
+  │          ▼                              │
+  │  Step 2: Rule Engine (score_song)       │
+  │    Score all songs in catalog           │
+  │          │                              │
+  │          ▼                              │
+  │  Step 3: Claude (Haiku)                 │
+  │    Generate personalized explanations   │
+  │          │                              │
+  │          ▼                              │
+  │  Confidence Scorer                      │
+  └─────────────────────────────────────────┘
+        │
+        ▼
+  Ranked Songs + AI Explanations
 
-1. Create a virtual environment (optional but recommended):
+  ─── Also available ───────────────────────
+  Rule-Based Pipeline (no API key required)
+  → score_song() → top-K sort → reasons
+```
 
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate      # Mac or Linux
-   .venv\Scripts\activate         # Windows
+See [assets/architecture.md](assets/architecture.md) for the full Mermaid diagram source.
 
-2. Install dependencies
+**Components:**
 
+| File | Role |
+|------|------|
+| `src/recommender.py` | `Song`, `UserProfile`, `Recommender` classes + `score_song`, `recommend_songs` |
+| `src/ai_recommender.py` | 3-step Claude agentic pipeline |
+| `src/main.py` | CLI entry point (`--mode rule\|ai`, `--query`, `--k`) |
+| `src/logger.py` | Structured logging to file + console |
+| `tests/test_recommender.py` | 7 pytest unit tests |
+| `tests/test_harness.py` | 6-scenario evaluation harness with confidence scoring |
+| `data/songs.csv` | 15-song catalog with audio features |
+
+---
+
+## Setup Instructions
+
+### 1. Clone and enter the project
+```bash
+git clone <your-repo-url>
+cd music-recommender-applied-ai
+```
+
+### 2. Create a virtual environment
+```bash
+python -m venv .venv
+source .venv/bin/activate        # Mac / Linux
+.venv\Scripts\activate           # Windows
+```
+
+### 3. Install dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Run the app:
+### 4. (AI mode only) Add your Anthropic API key
+```bash
+cp .env.example .env
+# Edit .env and paste your key:  ANTHROPIC_API_KEY=sk-ant-...
+```
 
+---
+
+## Running the System
+
+### Rule-based mode (no API key required)
 ```bash
 python -m src.main
 ```
 
-### Running Tests
-
-Run the starter tests with:
-
+### AI agentic mode
 ```bash
-pytest
+python -m src.main --mode ai --query "chill lofi for late-night studying"
+python -m src.main --mode ai --query "upbeat pop for a morning run" --k 3
+python -m src.main --mode ai --query "mellow jazz for a quiet evening"
 ```
 
-You can add more tests in `tests/test_recommender.py`.
+### Run unit tests
+```bash
+pytest tests/test_recommender.py -v
+```
+
+### Run evaluation harness
+```bash
+python tests/test_harness.py
+```
 
 ---
 
-## Experiments You Tried
+## Sample Interactions
 
-Use this section to document the experiments you ran. For example:
+### Example 1 — Rule-Based Mode
 
-- What happened when you changed the weight on genre from 2.0 to 0.5
-- What happened when you added tempo or valence to the score
-- How did your system behave for different types of users
+```
+[MODE: Rule-Based Recommender]
+  genre=pop  mood=happy  energy=0.8  tempo=120
 
----
+Top 5 Recommendations:
 
-## Limitations and Risks
+  Sunrise City by Neon Echo  —  Score: 5.96
+    • Genre match (+2.0)
+    • Mood match (+1.0)
+    • Energy similarity (+0.98)
+    • Tempo similarity (+0.82)
+    • Valence similarity (+0.99)
 
-Summarize some limitations of your recommender.
+  Rooftop Lights by Indigo Parade  —  Score: 4.90
+    • Energy similarity (+0.94)
+    • Tempo similarity (+0.96)
+    ...
+```
 
-Examples:
+### Example 2 — AI Agentic Mode (studying)
 
-- It only works on a tiny catalog
-- It does not understand lyrics or language
-- It might over favor one genre or mood
+```
+[MODE: AI Agentic Recommender — 3-Step Pipeline]
+  Your request: "chill lofi for late-night studying"
 
-You will go deeper on this in your model card.
+━━━ Step 1: Parsed Preferences (Claude) ━━━
+  favorite_genre: lofi
+  favorite_mood: chill
+  target_energy: 0.38
+  target_tempo: 75.0
+  target_valence: 0.58
 
----
+━━━ Step 2: Scored Recommendations (Rule Engine) ━━━
+  1. Midnight Coding by LoRoom  (score: 4.96)
+  2. Library Rain by Paper Lanterns  (score: 4.87)
+  3. Focus Flow by LoRoom  (score: 4.72)
+  4. Spacewalk Thoughts by Orbit Bloom  (score: 3.44)
+  5. Coffee Shop Stories by Slow Stereo  (score: 3.28)
 
-## Reflection
+━━━ Step 3: AI Explanations (Claude) ━━━
+  1. Midnight Coding perfectly captures that late-night focus energy with its low-tempo, 
+     chill vibe—exactly what you need to stay in the zone.
+  2. Library Rain's soft, acoustic texture makes it ideal background music for studying 
+     without distraction.
+  ...
 
-Read and complete `model_card.md`:
+  Confidence Score: 0.82
+```
 
-[**Model Card**](model_card.md)
+### Example 3 — AI Agentic Mode (workout)
 
-Write 1 to 2 paragraphs here about what you learned:
+```
+[MODE: AI Agentic Recommender — 3-Step Pipeline]
+  Your request: "high energy rock for a workout"
 
-- about how recommenders turn data into predictions
-- about where bias or unfairness could show up in systems like this
+━━━ Step 1: Parsed Preferences (Claude) ━━━
+  favorite_genre: rock
+  favorite_mood: intense
+  target_energy: 0.92
+  target_tempo: 148.0
+  target_valence: 0.5
 
+━━━ Step 2: Scored Recommendations (Rule Engine) ━━━
+  1. Storm Runner by Voltline  (score: 5.84)
+  2. Gym Hero by Max Pulse  (score: 4.07)
+  3. Electric Pulse by Neon Echo  (score: 3.96)
+  ...
 
----
-
-## 7. `model_card_template.md`
-
-Combines reflection and model card framing from the Module 3 guidance. :contentReference[oaicite:2]{index=2}  
-
-```markdown
-# 🎧 Model Card - Music Recommender Simulation
-
-## 1. Model Name
-
-Give your recommender a name, for example:
-
-> VibeFinder 1.0
-
----
-
-## 2. Intended Use
-
-- What is this system trying to do
-- Who is it for
-
-Example:
-
-> This model suggests 3 to 5 songs from a small catalog based on a user's preferred genre, mood, and energy level. It is for classroom exploration only, not for real users.
-
----
-
-## 3. How It Works (Short Explanation)
-
-Describe your scoring logic in plain language.
-
-- What features of each song does it consider
-- What information about the user does it use
-- How does it turn those into a number
-
-Try to avoid code in this section, treat it like an explanation to a non programmer.
-
----
-
-## 4. Data
-
-Describe your dataset.
-
-- How many songs are in `data/songs.csv`
-- Did you add or remove any songs
-- What kinds of genres or moods are represented
-- Whose taste does this data mostly reflect
+  Confidence Score: 0.89
+```
 
 ---
 
-## 5. Strengths
+## Design Decisions
 
-Where does your recommender work well
+**Why Claude Haiku for both parsing and explanation?**  
+Haiku is fast and cheap enough for interactive use. The parsing task (structured JSON extraction) doesn't need a larger model, and explanations benefit from being snappy rather than elaborate.
 
-You can think about:
-- Situations where the top results "felt right"
-- Particular user profiles it served well
-- Simplicity or transparency benefits
+**Why keep the rule-based engine as Step 2 instead of having Claude rank songs directly?**  
+Determinism and transparency. The scoring weights (genre +2, mood +1, etc.) are auditable and consistent. Claude handles language understanding; the rule engine handles ranking. This separation makes each component independently testable.
 
----
+**Why a confidence score?**  
+If all songs score similarly, the top result isn't meaningfully better than the others — that's a signal the catalog doesn't match the user's taste. Confidence surfaces this uncertainty rather than silently returning results.
 
-## 6. Limitations and Bias
-
-Where does your recommender struggle
-
-Some prompts:
-- Does it ignore some genres or moods
-- Does it treat all users as if they have the same taste shape
-- Is it biased toward high energy or one genre by default
-- How could this be unfair if used in a real product
+**Graceful fallback:**  
+If `ANTHROPIC_API_KEY` is missing, the system falls back to rule-based mode with a clear error message rather than crashing.
 
 ---
 
-## 7. Evaluation
+## Testing Summary
 
-How did you check your system
+**Unit tests (`pytest tests/test_recommender.py`): 7/7 passing**
 
-Examples:
-- You tried multiple user profiles and wrote down whether the results matched your expectations
-- You compared your simulation to what a real app like Spotify or YouTube tends to recommend
-- You wrote tests for your scoring logic
+| Test | Result |
+|------|--------|
+| `test_recommend_returns_songs_sorted_by_score` | PASS |
+| `test_explain_recommendation_returns_non_empty_string` | PASS |
+| `test_recommend_respects_k` | PASS |
+| `test_recommend_genre_boost` | PASS |
+| `test_explain_contains_title` | PASS |
+| `test_explain_no_match_still_returns_string` | PASS |
+| `test_acoustic_preference_affects_ranking` | PASS |
 
-You do not need a numeric metric, but if you used one, explain what it measures.
+**Evaluation harness (`python tests/test_harness.py`): 6/6 passing**
 
----
+Average confidence score: **0.64**. The system showed high confidence (0.71–0.74) for rock, electronic, and jazz — genres with one very strong match. Confidence was lower (0.41–0.57) for lofi and pop where many catalog songs score similarly, which correctly signals that the catalog is dense in those styles rather than pointing to a clear winner.
 
-## 8. Future Work
-
-If you had more time, how would you improve this recommender
-
-Examples:
-
-- Add support for multiple users and "group vibe" recommendations
-- Balance diversity of songs instead of always picking the closest match
-- Use more features, like tempo ranges or lyric themes
+The confidence metric revealed a real insight: low confidence doesn't mean a bad recommendation, it means the top result isn't dramatically better than runner-ups — useful information for the user.
 
 ---
 
-## 9. Personal Reflection
+## Reflection & Ethics
 
-A few sentences about what you learned:
+**Limitations:**
+- The catalog has only 15 songs, so genre diversity is thin — "ambient" returns non-ambient fallbacks.
+- Scoring weights are hand-tuned (genre +2, mood +1). A real system would learn these from click data, which introduces its own feedback-loop bias.
+- The system has no memory of past interactions; every request starts cold.
 
-- What surprised you about how your system behaved
-- How did building this change how you think about real music recommenders
-- Where do you think human judgment still matters, even if the model seems "smart"
+**Potential misuse:**
+- If deployed at scale, the genre/mood weighting could create filter bubbles — users only ever hear the same slice of music.
+- Claude parsing could be manipulated with adversarial inputs to extract non-music preferences; input should always be validated.
 
+**Surprises during testing:**
+- Claude's intent parsing was robust to vague queries ("something chill") but occasionally mapped "energetic" to "electronic" rather than the intended genre, leading to unexpected but not unreasonable results.
+- Confidence scores were more informative than raw scores — a top score of 4.0 could mean "great match" or "best of a poor catalog," and confidence distinguished those cases.
+
+**AI Collaboration:**
+- **Helpful:** Claude suggested separating intent-parsing from explanation-generation into two distinct API calls, which improved both accuracy and testability.
+- **Flawed:** An early suggestion to have Claude directly rank songs via a single prompt produced inconsistent orderings across runs — the deterministic rule engine proved more reliable for the ranking step.
+
+---
+
+## Video Walkthrough
+
+> 🎬 [Loom link — add after recording]
+
+---
+
+## Repository Structure
+
+```
+.
+├── assets/
+│   └── architecture.md        # Mermaid diagram source
+├── data/
+│   └── songs.csv              # 15-song catalog
+├── src/
+│   ├── ai_recommender.py      # Claude agentic pipeline
+│   ├── logger.py              # Structured logging
+│   ├── main.py                # CLI entry point
+│   └── recommender.py         # Core scoring logic + OOP classes
+├── tests/
+│   ├── test_harness.py        # Evaluation harness (stretch feature)
+│   └── test_recommender.py    # Unit tests
+├── .env.example               # API key template
+├── model_card.md
+├── README.md
+└── requirements.txt
+```
